@@ -36,7 +36,7 @@ func smallFileUploadTest(filedir string, master string) {
 
 	// upload the files
 	start := time.Now()
-	client := weedo.NewClient("127.0.0.1:9333", "")
+	client := weedo.NewClient(master, "")
 	for i := 0; i < 1024; i++ {
 		f, err := os.Open(filedir + "small" + fmt.Sprint(i))
 		if err != nil {
@@ -47,7 +47,7 @@ func smallFileUploadTest(filedir string, master string) {
 	}
 	fmt.Print(1024 / time.Since(start).Seconds())
 	fmt.Println(" MiB/s")
-	fmt.Println("(Large File Upload Speed)")
+	fmt.Println("(Small File Upload Speed)")
 }
 
 func main() {
