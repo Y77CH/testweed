@@ -4,11 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"os"
 	"time"
 
-	"github.com/linxGnu/goseaweedfs"
+	"github.com/ginuerzh/weedo"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -19,27 +18,6 @@ func randStr(n int) string {
 		s[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(s)
-}
-
-func largeFileUploadTest(filedir string, master string) {
-	f, err := os.Create(filedir + "large")
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = f.Write([]byte(randStr(1024 * 1024 * 1024)))
-	if err != nil {
-		panic(err)
-	}
-
-	f.Close()
-
-	start := time.Now()
-	sw, _ := goseaweedfs.NewSeaweed(master, []string{}, 8096, &http.Client{Timeout: 5 * time.Minute})
-	sw.UploadFile(filedir+"large", "test", "test")
-	fmt.Print(1024 / time.Since(start).Seconds())
-	fmt.Println(" MiB/s")
-	fmt.Println("(Large File Upload Speed)")
 }
 
 func smallFileUploadTest(filedir string, master string) {
@@ -58,9 +36,14 @@ func smallFileUploadTest(filedir string, master string) {
 
 	// upload the files
 	start := time.Now()
-	sw, _ := goseaweedfs.NewSeaweed(master, []string{}, 8096, &http.Client{Timeout: 5 * time.Minute})
+	client := weedo.NewClient("127.0.0.1:9333", "")
 	for i := 0; i < 1024; i++ {
-		sw.UploadFile(filedir+"small"+fmt.Sprint(i), "", "")
+		f, err := os.Open(filedir + "small" + fmt.Sprint(i))
+		if err != nil {
+			panic(err)
+		}
+		client.AssignUpload(randStr(4)+"small"+fmt.Sprint(i), "text/plain", f)
+		f.Close()
 	}
 	fmt.Print(1024 / time.Since(start).Seconds())
 	fmt.Println(" MiB/s")
@@ -70,8 +53,10 @@ func smallFileUploadTest(filedir string, master string) {
 func main() {
 	master := flag.String("master", "", "Specify master address")
 	filedir := flag.String("f", "", "Specify data directory")
+	op := flag.String("op", "", "Specify operation (s: small upload; l: large upload)")
 	flag.Parse()
 
-	largeFileUploadTest(*filedir, *master)
-	// smallFileUploadTest(*filedir, *master)
+	if *op == "s" {
+		smallFileUploadTest(*filedir, *master)
+	}
 }
